@@ -303,6 +303,8 @@ public abstract class Components {
         private boolean timeBasedLocalization = false; //Indicates whether the getCurrentPosition method of the actuator calculates the position based on time as opposed to an encoder, which is important to know.
         public Actuator(String actuatorName){
             this.name=actuatorName;
+            controlSystemMap.clear();
+            controlSystemMap.put("controlOff",new ControlSystem<>());
         }
         void initDevice(){
             this.device = (E) hardwareMap.tryGet(HardwareDevice.class,name);
@@ -332,8 +334,6 @@ public abstract class Components {
             for (ControlSystem<Z> system:controlFuncs){
                 system.registerToActuator((Z) this);
             }
-            controlSystemMap.clear();
-            controlSystemMap.put("controlOff",new ControlSystem<>());
             for (int i=0;i< controlFuncKeys.length;i++){
                 controlSystemMap.put(controlFuncKeys[i],controlFuncs[i]);
             }
