@@ -49,11 +49,11 @@ public class Beecode implements RobotConfig {
         public static double [] targetPoint = new double[3];
         public static void setReferencePoint(){
             referencePoint[1] = FULCRUMY;
-            double sideAngle = shootSide ? hiveAngle : -hiveAngle;
-            double sideHyp = shootSide ? sqrt(SUB_HEIGHT*SUB_HEIGHT+BAR_LENGTH*BAR_LENGTH) : -sqrt(SUB_HEIGHT*SUB_HEIGHT+BAR_LENGTH*BAR_LENGTH);
-            double fulcrumToPointAngle = hiveAngle - atan(SUB_HEIGHT/BAR_LENGTH);
-            referencePoint[0] = cos(fulcrumToPointAngle)*sideHyp;
-            referencePoint[2] = sin(fulcrumToPointAngle)*sideHyp;
+            double sideAngle = shootSide ? hiveAngle : 180+hiveAngle;
+            double sideHyp = sqrt(SUB_HEIGHT*SUB_HEIGHT+BAR_LENGTH*BAR_LENGTH);
+            double fulcrumToPointAngle = shootSide ? toRadians(sideAngle) - atan(SUB_HEIGHT/BAR_LENGTH) : toRadians(sideAngle) + atan(SUB_HEIGHT/BAR_LENGTH);
+            referencePoint[0] = cos(fulcrumToPointAngle)*sideHyp + FIELDWIDTH/2;
+            referencePoint[2] = sin(fulcrumToPointAngle)*sideHyp + FULCRUM_HEIGHT;
         }
         public static void setTargetPoint(){
 
