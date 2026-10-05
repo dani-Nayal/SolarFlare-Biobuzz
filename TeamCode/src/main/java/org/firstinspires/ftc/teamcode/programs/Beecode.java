@@ -29,6 +29,13 @@ public class Beecode implements RobotConfig {
     public static BotServo transferGate = new BotServo("transferGate", Servo.Direction.FORWARD, 0, 180).setKeyTargets(new String[]{"open","closed"}, new double[]{0,0});
     public static BotServo hood = new BotServo("hood", Servo.Direction.FORWARD, 0, 180);
     public static BotServo ramp = new BotServo("hood", Servo.Direction.FORWARD, 0, 180).setKeyTargets(new String[]{"down","up"}, new double[]{0,0});
+    //
+    //
+    //
+    // Is "hood" an error? We used it already
+    //
+    //
+    //
     @Override
     public ArrayList<Actuator<?>> getActuators() {return new ArrayList<>(Arrays.asList(leftFront, leftBack, rightFront, rightBack, intake, transfer, turret, flywheel, transferGate, hood, ramp));}
 
@@ -70,6 +77,21 @@ public class Beecode implements RobotConfig {
             double offsetAngle = Math.toDegrees(atan2(offsets[2], shootSide ? -offsets[2] : offsets[2]));
             targetPoint[1] = offsetHyp*cos(Math.toRadians(sideAngle+offsetAngle));
             targetPoint[2] = offsetHyp*sin(Math.toRadians(sideAngle+offsetAngle));
+        }
+        public static void updateIntake() {
+            if (isIntaking) {
+                intake.setPower(1.0);
+            } else {
+                intake.setPower(0);
+            }
+        }
+
+        public static void updateShooting() {
+            if (isShooting) {
+                flywheel.setPower(1.0);
+            } else {
+                flywheel.setPower(0);
+            }
         }
     }
 
