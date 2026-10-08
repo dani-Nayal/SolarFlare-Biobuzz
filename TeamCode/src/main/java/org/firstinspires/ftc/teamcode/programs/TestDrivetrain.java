@@ -89,7 +89,9 @@ public class TestDrivetrain extends LinearOpMode {
                                             Components.telemetry.addData("Draw (amps)", rightFront.getCurrentAmps());
                                         })
                                 )
-                        )
+                        ),
+
+                        new Commands.InstantCommand(() -> Components.telemetry.update())
                 )
         );
 
