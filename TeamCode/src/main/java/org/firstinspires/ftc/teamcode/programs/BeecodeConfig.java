@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import static java.lang.Math.*;
 
-public class Beecode implements RobotConfig {
+public class BeecodeConfig implements RobotConfig {
     public static BotMotor leftFront = new BotMotor("leftFront", Direction.REVERSE);
     public static BotMotor leftBack = new BotMotor("leftBack", Direction.REVERSE);
     public static BotMotor rightFront = new BotMotor("rightFront", Direction.FORWARD);
@@ -41,6 +41,7 @@ public class Beecode implements RobotConfig {
 
     public static boolean isShooting = false;
     public static boolean isIntaking = false;
+    public static boolean isStalled = false;
     public enum BallCount {
         EMPTY,
         ATMOSTONE,
@@ -49,6 +50,7 @@ public class Beecode implements RobotConfig {
     }
     public static BallCount count = BallCount.EMPTY;
     public static double FIELDWIDTH = 141.5;
+    double velocity = intake.getVelocity();
     public static class Hive{
         public static boolean shootSide = true;
         public static double hiveAngle = 30;
@@ -80,17 +82,28 @@ public class Beecode implements RobotConfig {
         }
         public static void updateIntake() {
             if (isIntaking) {
-                intake.setPower(1.0);
-            } else {
-                intake.setPower(0);
-            }
+                if (isStalled) {
+                    intake.setPower(0.0);
+                } else {
+                    intake.setPower(1.0);
+                    if (intake.getVelocity() < .2 && intake.getCurrentAmps() > 12){
+                        intake.setPower(0.0);
+                        isStalled = true;
+                    }
+                }
+             } else {
+                 intake.setPower(0.0);
+                 isStalled = false;
+             }
         }
 
+
         public static void updateShooting() {
+            flywheel.setPower(0.5);
             if (isShooting) {
-                flywheel.setPower(1.0);
+                transfer.setPower(1.0);
             } else {
-                flywheel.setPower(0);
+                transfer.setPower(0.0);
             }
         }
     }
