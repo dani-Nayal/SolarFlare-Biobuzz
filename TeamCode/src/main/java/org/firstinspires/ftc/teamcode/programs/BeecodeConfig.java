@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.programs;
 
 import static org.firstinspires.ftc.teamcode.base.Commands.executor;
+import static org.firstinspires.ftc.teamcode.base.Components.getHardwareMap;
 import static org.firstinspires.ftc.teamcode.base.Components.timer;
 import static org.firstinspires.ftc.teamcode.pedro.Pedro.follower;
 
@@ -123,6 +124,10 @@ public class BeecodeConfig implements RobotConfig {
                     )
             ),
             new IfThen(
+                    ()->(isShooting && count==BallCount.EMPTY),
+                    new InstantCommand(()->isShooting=false)
+            ),
+            new IfThen(
                     ()->(isIntaking && count!=BallCount.FULL),
                     new ParallelCommand(
                             new UpdateCount(),
@@ -135,6 +140,10 @@ public class BeecodeConfig implements RobotConfig {
                                     transfer.setPowerCommand(0.0)
                             )
                     )
+            ),
+            new IfThen(
+                    ()->(isIntaking && count==BallCount.FULL),
+                    new InstantCommand(()->isIntaking=false)
             ),
             new IfThen(
                     ()->(true),
@@ -154,5 +163,7 @@ public class BeecodeConfig implements RobotConfig {
         Components.enableCaching(LynxModule.BulkCachingMode.MANUAL);
         executor.setClearBulkCache(true);
         isShooting = false; isIntaking = false;
+        entranceSensor = getHardwareMap().get(AnalogInput.class,"entranceSensor");
+        entranceSensor = getHardwareMap().get(AnalogInput.class,"transferSensor");
     }
 }

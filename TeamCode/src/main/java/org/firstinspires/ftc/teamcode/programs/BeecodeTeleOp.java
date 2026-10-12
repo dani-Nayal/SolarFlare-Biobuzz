@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.programs;
 
 import static org.firstinspires.ftc.teamcode.base.Commands.executor;
-import static org.firstinspires.ftc.teamcode.base.Commands.triggeredToggleCommand;
 import static org.firstinspires.ftc.teamcode.programs.BeecodeConfig.*;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -74,8 +73,13 @@ public class BeecodeTeleOp extends LinearOpMode {
                         () -> (double) gamepad1.left_stick_y,
                         () -> (double) -gamepad1.right_stick_x
                 ),
-                triggeredToggleCommand(()->gamepad1.left_trigger_pressed, new InstantCommand(()->isIntaking=true), new InstantCommand(()->isIntaking=false)),
                 new PressCommand(
+                        new IfThen(
+                                ()->gamepad1.left_trigger_pressed,
+                                new InstantCommand(
+                                        ()->isIntaking=!isIntaking
+                                )
+                        ),
                         new IfThen(
                                 ()->gamepad1.right_trigger_pressed,
                                 new InstantCommand(()->{
