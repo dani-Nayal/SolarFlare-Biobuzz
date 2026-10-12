@@ -1,11 +1,13 @@
 package org.firstinspires.ftc.teamcode.programs;
 
 import static org.firstinspires.ftc.teamcode.base.Commands.executor;
+import static org.firstinspires.ftc.teamcode.base.Commands.triggeredToggleCommand;
 import static org.firstinspires.ftc.teamcode.programs.BeecodeConfig.*;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.base.Commands;
+import org.firstinspires.ftc.teamcode.base.Commands.*;
 import org.firstinspires.ftc.teamcode.base.Components;
 
 
@@ -43,7 +45,6 @@ public class BeecodeTeleOp extends LinearOpMode {
         Components.telemetry.addData("Actual Velocity: ", flywheel.getVelocity());
 
         Components.telemetry.addLine("\nIntake");
-        Components.telemetry.addData("Stalled: ", isStalled);
         Components.telemetry.addData("Set Power: ", intake.getVelocity());
         Components.telemetry.addData("Actual Velocity: ", intake.getVelocity());
         Components.telemetry.addData("Draw (amps)", intake.getCurrentAmps());
@@ -61,6 +62,7 @@ public class BeecodeTeleOp extends LinearOpMode {
 
         executor.setCommands(
             new Commands.RunResettingLoop(
+                updateIntakeTransfer,
                 new Commands.RobotCentricMecanumCommand(
                     new Components.BotMotor[] {
                         leftFront,
@@ -71,35 +73,40 @@ public class BeecodeTeleOp extends LinearOpMode {
                         () -> (double) gamepad1.left_stick_x,
                         () -> (double) gamepad1.left_stick_y,
                         () -> (double) -gamepad1.right_stick_x
-                ), new Commands.InstantCommand(() -> {
-                    BeecodeConfig.isIntaking = gamepad1.left_trigger_pressed;
-                    BeecodeConfig.isShooting = gamepad1.right_trigger_pressed;
-                    Hive.updateIntake();
-                    Hive.updateShooting();
-                })
-            ), new Commands.PressCommand(
-                new Commands.IfThen(() -> gamepad1.a,
-                    new Commands.InstantCommand(() -> {
-                        leftBack.setPower(leftBack.getPower() == 0 ? 1 : 0);
-                    })
-                )
-            ), new Commands.PressCommand(
-                new Commands.IfThen(() -> gamepad1.b,
-                    new Commands.InstantCommand(() -> {
-                        leftBack.setPower(leftBack.getPower() == 0 ? 1 : 0);
-                    })
-                )
-            ), new Commands.PressCommand(
-                new Commands.IfThen(() -> gamepad1.x,
-                    new Commands.InstantCommand(() -> {
-                        leftBack.setPower(leftBack.getPower() == 0 ? 1 : 0);
-                    })
-                )
-            ), new Commands.PressCommand(
-                new Commands.IfThen(() -> gamepad1.y,
-                    new Commands.InstantCommand(() -> {
-                        leftBack.setPower(leftBack.getPower() == 0 ? 1 : 0);
-                    })
+                ),
+                triggeredToggleCommand(()->gamepad1.left_trigger_pressed, new InstantCommand(()->isIntaking=true), new InstantCommand(()->isIntaking=false)),
+                new PressCommand(
+                        new IfThen(
+                                ()->gamepad1.right_trigger_pressed,
+                                new InstantCommand(()->{
+                                    if (count==BallCount.EMPTY) count = BallCount.PARTIAL;
+                                    isShooting=true;
+                                })
+                        )
+                ), new Commands.PressCommand(
+                    new Commands.IfThen(() -> gamepad1.a,
+                            new Commands.InstantCommand(() -> {
+                                leftBack.setPower(leftBack.getPower() == 0 ? 1 : 0);
+                            })
+                    )
+                ), new Commands.PressCommand(
+                        new Commands.IfThen(() -> gamepad1.b,
+                                new Commands.InstantCommand(() -> {
+                                    leftBack.setPower(leftBack.getPower() == 0 ? 1 : 0);
+                                })
+                        )
+                ), new Commands.PressCommand(
+                        new Commands.IfThen(() -> gamepad1.x,
+                                new Commands.InstantCommand(() -> {
+                                    leftBack.setPower(leftBack.getPower() == 0 ? 1 : 0);
+                                })
+                        )
+                ), new Commands.PressCommand(
+                        new Commands.IfThen(() -> gamepad1.y,
+                                new Commands.InstantCommand(() -> {
+                                    leftBack.setPower(leftBack.getPower() == 0 ? 1 : 0);
+                                })
+                        )
                 )
             )
         );

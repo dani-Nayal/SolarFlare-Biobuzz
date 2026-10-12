@@ -1,10 +1,12 @@
 package org.firstinspires.ftc.teamcode.programs;
 
 import static org.firstinspires.ftc.teamcode.base.Commands.executor;
+import static org.firstinspires.ftc.teamcode.base.Components.timer;
 import static org.firstinspires.ftc.teamcode.pedro.Pedro.follower;
 
 import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.lynx.LynxModule;
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotorSimple.*;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -32,21 +34,21 @@ public class BeecodeConfig implements RobotConfig {
     public static BotServo transferGate = new BotServo("transferGate", Servo.Direction.FORWARD, 0, 180).setKeyTargets(new String[]{"open","closed"}, new double[]{0,0});
     public static BotServo hood = new BotServo("hood", Servo.Direction.FORWARD, 0, 180);
     public static BotServo ramp = new BotServo("ramp", Servo.Direction.FORWARD, 0, 180).setKeyTargets(new String[]{"down","up"}, new double[]{0,0});
+    public static AnalogInput entranceSensor;
+    public static AnalogInput transferSensor;
+    public static double DETECTTHRESHOLD = 50;
+    public static double ENTRANCEDETECTTIME = 0.5;
     @Override
     public ArrayList<Actuator<?>> getActuators() {return new ArrayList<>(Arrays.asList(leftFront, leftBack, rightFront, rightBack, intake, transfer, turret, flywheel, transferGate, hood, ramp));}
-
     public static boolean isShooting = false;
     public static boolean isIntaking = false;
-    public static boolean isStalled = false;
     public enum BallCount {
         EMPTY,
-        ATMOSTONE,
-        ATLEASTTWO,
+        PARTIAL,
         FULL
     }
     public static BallCount count = BallCount.EMPTY;
     public static double FIELDWIDTH = 141.5;
-    double velocity = intake.getVelocity();
     public static class Hive{
         public static boolean shootSide = true;
         public static double hiveAngle = 30;
@@ -76,35 +78,6 @@ public class BeecodeConfig implements RobotConfig {
             targetPoint[1] = offsetHyp*cos(Math.toRadians(sideAngle+offsetAngle));
             targetPoint[2] = offsetHyp*sin(Math.toRadians(sideAngle+offsetAngle));
         }
-<<<<<<< Updated upstream:TeamCode/src/main/java/org/firstinspires/ftc/teamcode/programs/BeecodeConfig.java
-        public static void updateIntake() {
-            if (isIntaking) {
-                if (isStalled) {
-                    intake.setPower(0.0);
-                } else {
-                    intake.setPower(1.0);
-                    if (intake.getVelocity() < .2 && intake.getCurrentAmps() > 12){
-                        intake.setPower(0.0);
-                        isStalled = true;
-                    }
-                }
-             } else {
-                 intake.setPower(0.0);
-                 isStalled = false;
-             }
-        }
-
-
-        public static void updateShooting() {
-            flywheel.setPower(0.5);
-            if (isShooting) {
-                transfer.setPower(1.0);
-            } else {
-                transfer.setPower(0.0);
-            }
-        }
-=======
->>>>>>> Stashed changes:TeamCode/src/main/java/org/firstinspires/ftc/teamcode/programs/Beecode.java
     }
     public static Pose getTurretPose(){
         Pose followerPose = follower.pose();
@@ -112,30 +85,55 @@ public class BeecodeConfig implements RobotConfig {
         double newy = followerPose.y() - TURRETTODTCENTER*sin(followerPose.heading());
         return new Pose(newx, newy, followerPose.heading());
     }
-    public static ConditionalCommand updateIntakeTransfer = new ConditionalCommand(
+    public static class UpdateCount extends CompoundCommand{
+        private double firstHitTime = -1;
+        public UpdateCount(){
+            setGroup(new ParallelCommand(
+                    new InstantCommand(()->{if (isStart()) firstHitTime=-1;}),
+                    new ContinuousCommand(()->{if (count==BallCount.EMPTY && (transferSensor.getVoltage()/3.3 * 1000)<=DETECTTHRESHOLD) {count = BallCount.PARTIAL;}}),
+                    new ContinuousCommand(()->{
+                        if (count!=BallCount.FULL){
+                            boolean detected = (entranceSensor.getVoltage()/3.3 * 1000)<=DETECTTHRESHOLD;
+                            if (detected && firstHitTime==-1) firstHitTime = timer.time();
+                            else if (detected && timer.time()>firstHitTime+ENTRANCEDETECTTIME) {count = BallCount.FULL; firstHitTime=-1;}
+                            else if (!detected) firstHitTime=-1;
+                        }
+                    })
+            ));
+        }
+    }
+    public static Command updateIntakeTransfer = new RunResettingLoop(new PressCommand(
             new IfThen(
                     ()->(isShooting && isIntaking),
                     new SequentialCommand(
                             transferGate.instantSetTargetCommand("open"),
                             intake.setPowerCommand(1.0),
-                            transfer.setPowerCommand(1.0)
+                            transfer.setPowerCommand(1.0),
+                            new InstantCommand(()->{count = BallCount.PARTIAL;})
                     )
             ),
             new IfThen(
-                    ()->(isShooting),
+                    ()->(isShooting && count!=BallCount.EMPTY),
                     new SequentialCommand(
                             transferGate.instantSetTargetCommand("open"),
                             intake.setPowerCommand(1.0),
-                            transfer.setPowerCommand(1.0)
+                            transfer.setPowerCommand(1.0),
+                            new SleepCommand(0.3),
+                            new InstantCommand(()->{isShooting=false; count = BallCount.EMPTY;})
                     )
             ),
             new IfThen(
-                    ()->(isIntaking),
-                    new SequentialCommand(
-                            transferGate.instantSetTargetCommand("closed"),
-                            new SleepCommand(0.2),
-                            intake.setPowerCommand(1.0),
-                            transfer.setPowerCommand(1.0)
+                    ()->(isIntaking && count!=BallCount.FULL),
+                    new ParallelCommand(
+                            new UpdateCount(),
+                            new SequentialCommand(
+                                    transferGate.instantSetTargetCommand("closed"),
+                                    new SleepCommand(0.1),
+                                    intake.setPowerCommand(1.0),
+                                    transfer.setPowerCommand(1.0),
+                                    new SleepUntilTrue(()->count==BallCount.PARTIAL),
+                                    transfer.setPowerCommand(0.0)
+                            )
                     )
             ),
             new IfThen(
@@ -143,10 +141,11 @@ public class BeecodeConfig implements RobotConfig {
                     new SequentialCommand(
                             intake.setPowerCommand(0.0),
                             transfer.setPowerCommand(0.0),
+                            new SleepCommand(0.1),
                             transferGate.instantSetTargetCommand("open")
                     )
             )
-    );
+    ));
 
     public static double TURRETHEIGHT = 0; public static double DTWIDTH = 0; public static double DTLEN = 0; public static double TURRETTODTCENTER = 0;
     public static double INTAKESPAN = 0; public static double RAMPLENGTH = 0; public static double RAMPWIDTH = 0;
