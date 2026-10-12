@@ -1,11 +1,14 @@
 package org.firstinspires.ftc.teamcode.programs;
 
 import static org.firstinspires.ftc.teamcode.base.Commands.executor;
+import static org.firstinspires.ftc.teamcode.pedro.Pedro.follower;
 
+import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.DcMotorSimple.*;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.base.Commands.*;
 import org.firstinspires.ftc.teamcode.base.Components;
 import org.firstinspires.ftc.teamcode.base.Components.*;
 import org.firstinspires.ftc.teamcode.presets.PresetControl.*;
@@ -28,14 +31,7 @@ public class BeecodeConfig implements RobotConfig {
     }
     public static BotServo transferGate = new BotServo("transferGate", Servo.Direction.FORWARD, 0, 180).setKeyTargets(new String[]{"open","closed"}, new double[]{0,0});
     public static BotServo hood = new BotServo("hood", Servo.Direction.FORWARD, 0, 180);
-    public static BotServo ramp = new BotServo("hood", Servo.Direction.FORWARD, 0, 180).setKeyTargets(new String[]{"down","up"}, new double[]{0,0});
-    //
-    //
-    //
-    // Is "hood" an error? We used it already
-    //
-    //
-    //
+    public static BotServo ramp = new BotServo("ramp", Servo.Direction.FORWARD, 0, 180).setKeyTargets(new String[]{"down","up"}, new double[]{0,0});
     @Override
     public ArrayList<Actuator<?>> getActuators() {return new ArrayList<>(Arrays.asList(leftFront, leftBack, rightFront, rightBack, intake, transfer, turret, flywheel, transferGate, hood, ramp));}
 
@@ -80,6 +76,7 @@ public class BeecodeConfig implements RobotConfig {
             targetPoint[1] = offsetHyp*cos(Math.toRadians(sideAngle+offsetAngle));
             targetPoint[2] = offsetHyp*sin(Math.toRadians(sideAngle+offsetAngle));
         }
+<<<<<<< Updated upstream:TeamCode/src/main/java/org/firstinspires/ftc/teamcode/programs/BeecodeConfig.java
         public static void updateIntake() {
             if (isIntaking) {
                 if (isStalled) {
@@ -106,9 +103,52 @@ public class BeecodeConfig implements RobotConfig {
                 transfer.setPower(0.0);
             }
         }
+=======
+>>>>>>> Stashed changes:TeamCode/src/main/java/org/firstinspires/ftc/teamcode/programs/Beecode.java
     }
+    public static Pose getTurretPose(){
+        Pose followerPose = follower.pose();
+        double newx = followerPose.x() - TURRETTODTCENTER*cos(followerPose.heading());
+        double newy = followerPose.y() - TURRETTODTCENTER*sin(followerPose.heading());
+        return new Pose(newx, newy, followerPose.heading());
+    }
+    public static ConditionalCommand updateIntakeTransfer = new ConditionalCommand(
+            new IfThen(
+                    ()->(isShooting && isIntaking),
+                    new SequentialCommand(
+                            transferGate.instantSetTargetCommand("open"),
+                            intake.setPowerCommand(1.0),
+                            transfer.setPowerCommand(1.0)
+                    )
+            ),
+            new IfThen(
+                    ()->(isShooting),
+                    new SequentialCommand(
+                            transferGate.instantSetTargetCommand("open"),
+                            intake.setPowerCommand(1.0),
+                            transfer.setPowerCommand(1.0)
+                    )
+            ),
+            new IfThen(
+                    ()->(isIntaking),
+                    new SequentialCommand(
+                            transferGate.instantSetTargetCommand("closed"),
+                            new SleepCommand(0.2),
+                            intake.setPowerCommand(1.0),
+                            transfer.setPowerCommand(1.0)
+                    )
+            ),
+            new IfThen(
+                    ()->(true),
+                    new SequentialCommand(
+                            intake.setPowerCommand(0.0),
+                            transfer.setPowerCommand(0.0),
+                            transferGate.instantSetTargetCommand("open")
+                    )
+            )
+    );
 
-    public static double TURRETHEIGHT = 0; public static double TURRETTOBACK = 0; public static double TURRETTOFRONT = 0; public static double TURRETTOSIDE = 0;
+    public static double TURRETHEIGHT = 0; public static double DTWIDTH = 0; public static double DTLEN = 0; public static double TURRETTODTCENTER = 0;
     public static double INTAKESPAN = 0; public static double RAMPLENGTH = 0; public static double RAMPWIDTH = 0;
     public static double POLLENRADIUS = 1.4;
     public void generalInit(){
