@@ -1,23 +1,19 @@
 package org.firstinspires.ftc.teamcode.vision;
 import static java.lang.Double.NaN;
 
-import android.util.Size;
-
-import com.pedropathing.math.Pose;
+import com.bylazar.field.FieldManager;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-import org.firstinspires.ftc.vision.VisionPortal;
-import org.opencv.core.Rect;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,10 +27,8 @@ public class Vision {
     public final double HORIZONTAL_FOV = 54.4;
     public Pose3D cameraPoseOnRobot = new Pose3D(new Position(DistanceUnit.INCH, 3, -5.5, 5.7, 0), new YawPitchRollAngles(AngleUnit.DEGREES, 0, 0, 0, 0));
     public Limelight3A limelight;
-    public VisionPortal portal;
     public Telemetry telemetry;
     List<Integer> localizationAprilTags = new ArrayList<>();
-    PollenDetector pollenDetector = new PollenDetector();
 
     public enum CAMERA_ORIENTATION {
         NORMAL,
@@ -47,11 +41,8 @@ public class Vision {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         this.telemetry = telemetry;
         limelight.setPollRateHz(11);
-        portal = new VisionPortal.Builder()
-                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
-                .setCameraResolution(new Size(640, 480))
-                .addProcessor(pollenDetector)
-                .build();
+        localizationAprilTags.add(20);
+        localizationAprilTags.add(24);
     }
 
     public Vision(HardwareMap hardwareMap, Telemetry telemetry, Pose3D cameraPoseOnRobot, CAMERA_ORIENTATION cameraOrientation){
@@ -60,20 +51,8 @@ public class Vision {
         limelight.setPollRateHz(11);
         this.cameraPoseOnRobot = cameraPoseOnRobot;
         this.cameraOrientation = cameraOrientation;
-    }
-
-    public List<Pollen> getPollenWithGobildaCamera(Pose botPose){
-        if (botPose == null) return null;
-
-        List<Rect> boxes = pollenDetector.getBoxes();
-
-        List<Pollen> out = new ArrayList<>();
-
-        for (Rect box : boxes){
-            Pollen pollen = new Pollen(box.x, box.y, box.width, box.height, botPose, cameraPoseOnRobot);
-            out.add(pollen);
-        }
-        return out;
+        localizationAprilTags.add(20);
+        localizationAprilTags.add(24);
     }
 
     public List<Pollen> getPollenWithPythonColor(Pose botPose){
@@ -122,7 +101,7 @@ public class Vision {
         if (!limelight.isRunning()) limelight.start();
         if (limelight.getStatus().getPipelineIndex() != APRIL_TAGS_PIPELINE_INDEX) limelight.pipelineSwitch(APRIL_TAGS_PIPELINE_INDEX);
 
-        double odometryHeading = normalizeHeading360Degrees(Math.toDegrees(odometryPose.heading()));
+        double odometryHeading = normalizeHeading360Degrees(Math.toDegrees(odometryPose.getHeading()));
 
         Pose out = null;
 
@@ -135,12 +114,12 @@ public class Vision {
                 if (localizationAprilTags.contains(aprilTag.getFiducialId())){
                     Pose aprilTagPose = limelightToPedroPose(result.getBotpose());
 
-                    double aprilTagHeading = Math.toDegrees(aprilTagPose.heading());
+                    double aprilTagHeading = Math.toDegrees(aprilTagPose.getHeading());
 
                     double diff = (aprilTagHeading - odometryHeading + 540) % 360 - 180;
                     double headingDiff = Math.abs(diff);
 
-                    double dist = Math.hypot(aprilTagPose.x() - odometryPose.x(), aprilTagPose.y() - odometryPose.y());
+                    double dist = Math.hypot(aprilTagPose.getX() - odometryPose.getX(), aprilTagPose.getY() - odometryPose.getY());
 
                     if ((headingDiff < 15) && (dist < 10)){
                         out = aprilTagPose;
@@ -157,7 +136,7 @@ public class Vision {
         if (!limelight.isRunning()) limelight.start();
         if (limelight.getStatus().getPipelineIndex() != APRIL_TAGS_PIPELINE_INDEX) limelight.pipelineSwitch(APRIL_TAGS_PIPELINE_INDEX);
 
-        double odometryHeading = normalizeHeading360Degrees(Math.toDegrees(odometryPose.heading()));
+        double odometryHeading = normalizeHeading360Degrees(Math.toDegrees(odometryPose.getHeading()));
 
         limelight.updateRobotOrientation(standardToLimelightYaw(odometryHeading));
 
@@ -172,12 +151,12 @@ public class Vision {
                 if (localizationAprilTags.contains(aprilTag.getFiducialId())){
                     Pose aprilTagPose = limelightToPedroPose(result.getBotpose());
 
-                    double aprilTagHeading = Math.toDegrees(aprilTagPose.heading());
+                    double aprilTagHeading = Math.toDegrees(aprilTagPose.getHeading());
 
                     double diff = (aprilTagHeading - odometryHeading + 540) % 360 - 180;
                     double headingDiff = Math.abs(diff);
 
-                    double dist = Math.hypot(aprilTagPose.x() - odometryPose.x(), aprilTagPose.y() - odometryPose.y());
+                    double dist = Math.hypot(aprilTagPose.getX() - odometryPose.getX(), aprilTagPose.getY() - odometryPose.getY());
 
                     if ((headingDiff < 15) && (dist < 10)){
                         out = aprilTagPose;
@@ -193,12 +172,12 @@ public class Vision {
         if (!limelight.isRunning()) limelight.start();
         if (limelight.getStatus().getPipelineIndex() != APRIL_TAGS_PIPELINE_INDEX) limelight.pipelineSwitch(APRIL_TAGS_PIPELINE_INDEX);
 
-        double odometryHeading = normalizeHeading360Degrees(Math.toDegrees(odometryPose.heading()));
+        double odometryHeading = normalizeHeading360Degrees(Math.toDegrees(odometryPose.getHeading()));
 
         Pose botPoseMT1 = getBotPoseMT1(odometryPose);
 
         if (botPoseMT1 != null) {
-            double llYaw = standardToLimelightYaw(Math.toDegrees(botPoseMT1.heading()));
+            double llYaw = standardToLimelightYaw(Math.toDegrees(botPoseMT1.getHeading()));
 
             limelight.updateRobotOrientation(llYaw);
 
@@ -213,12 +192,12 @@ public class Vision {
                     if (localizationAprilTags.contains(aprilTag.getFiducialId())){
                         Pose aprilTagPose = limelightToPedroPose(result.getBotpose());
 
-                        double aprilTagHeading = Math.toDegrees(aprilTagPose.heading());
+                        double aprilTagHeading = Math.toDegrees(aprilTagPose.getHeading());
 
                         double diff = (aprilTagHeading - odometryHeading + 540) % 360 - 180;
                         double headingDiff = Math.abs(diff);
 
-                        double dist = Math.hypot(aprilTagPose.x() - odometryPose.x(), aprilTagPose.y() - odometryPose.y());
+                        double dist = Math.hypot(aprilTagPose.getX() - odometryPose.getX(), aprilTagPose.getY() - odometryPose.getY());
 
                         if ((headingDiff < 15) && (dist < 10)){
                             out = aprilTagPose;
@@ -279,8 +258,8 @@ public class Vision {
         double w2 = 4;
         double w3 = 1;
 
-        double horizontalLeftBound = Math.toDegrees(botPose.heading()) + (HORIZONTAL_FOV / 2);
-        double horizontalRightBound = Math.toDegrees(botPose.heading()) - (HORIZONTAL_FOV / 2);
+        double horizontalLeftBound = Math.toDegrees(botPose.getHeading()) + (HORIZONTAL_FOV / 2);
+        double horizontalRightBound = Math.toDegrees(botPose.getHeading()) - (HORIZONTAL_FOV / 2);
 
         for (double angleDeg = horizontalLeftBound; angleDeg >= horizontalRightBound; angleDeg -= stepDeg) {
 
@@ -293,8 +272,8 @@ public class Vision {
             double totalDist = 0;
 
             for (Pollen detection : detections) {
-                double rx = detection.x - botPose.x();
-                double ry = detection.y - botPose.y();
+                double rx = detection.x - botPose.getX();
+                double ry = detection.y - botPose.getY();
 
                 double perpendicularDist = Math.abs(rx * sin - ry * cos);
                 double distance = Math.hypot(rx, ry);
@@ -328,6 +307,21 @@ public class Vision {
         if (bestAngleDeg < 0) bestAngleDeg += 360;
 
         return bestAngleDeg;
+    }
+
+    public void drawPoseOnPanels(FieldManager panelsField, Pose pose, String color) {
+        if (!(pose == null || panelsField == null)) {
+            panelsField.setStyle(color, color, 0);
+            panelsField.moveCursor(pose.getX(), pose.getY());
+            panelsField.circle(3);
+
+            double headingLineLength = 3;
+            double x2 = pose.getX() + Math.cos(pose.getHeading()) * headingLineLength;
+            double y2 = pose.getY() + Math.sin(pose.getHeading()) * headingLineLength;
+
+            panelsField.setStyle("black", "black", 1);
+            panelsField.line(x2, y2);
+        }
     }
     public double normalizeHeading360Degrees(double heading) {
         return (heading + 360) % 360;
