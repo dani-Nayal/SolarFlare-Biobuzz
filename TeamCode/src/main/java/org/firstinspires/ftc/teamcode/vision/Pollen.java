@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.vision;
 
-import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -58,9 +58,9 @@ public class Pollen {
         depth += cameraPoseOnRobot.getPosition().toUnit(DistanceUnit.INCH).x;
         horizontal += cameraPoseOnRobot.getPosition().toUnit(DistanceUnit.INCH).y;
 
-        double botPoseX = botPose.getX();
-        double botPoseY = botPose.getY();
-        double theta = botPose.getHeading();
+        double botPoseX = botPose.x();
+        double botPoseY = botPose.y();
+        double theta = botPose.heading();
 
         double cos = Math.cos(theta);
         double sin = Math.sin(theta);
@@ -104,9 +104,9 @@ public class Pollen {
         depth += cameraPoseOnRobot.getPosition().toUnit(DistanceUnit.INCH).x;
         horizontal += cameraPoseOnRobot.getPosition().toUnit(DistanceUnit.INCH).y;
 
-        double botPoseX = botPose.getX();
-        double botPoseY = botPose.getY();
-        double theta = botPose.getHeading();
+        double botPoseX = botPose.x();
+        double botPoseY = botPose.y();
+        double theta = botPose.heading();
 
         double cos = Math.cos(theta);
         double sin = Math.sin(theta);
@@ -146,9 +146,9 @@ public class Pollen {
         depth += cameraPoseOnRobot.getPosition().toUnit(DistanceUnit.INCH).x;
         horizontal += cameraPoseOnRobot.getPosition().toUnit(DistanceUnit.INCH).y;
 
-        double botPoseX = botPose.getX();
-        double botPoseY = botPose.getY();
-        double theta = botPose.getHeading();
+        double botPoseX = botPose.x();
+        double botPoseY = botPose.y();
+        double theta = botPose.heading();
 
         double cos = Math.cos(theta);
         double sin = Math.sin(theta);
